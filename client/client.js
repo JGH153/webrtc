@@ -3,7 +3,7 @@ var name;
 var connectedUser;
 
 //connecting to our signaling server
-var conn = new WebSocket('ws://localhost:9090');
+var conn = new WebSocket('ws://192.168.8.145:9095/');
 
 conn.onopen = function () {
    console.log("Connected to the signaling server");
@@ -94,7 +94,7 @@ loginBtn.addEventListener("click", function (event) {
 
 function handleLogin(success) {
    if (success === false) {
-      alert("Ooops...try a different username");
+      console.log("Ooops...try a different username");
    } else {
       loginPage.style.display = "none";
       callPage.style.display = "block";
@@ -121,6 +121,7 @@ function handleLogin(success) {
 
          //when a remote user adds stream to the peer connection, we display it
          yourConn.onaddstream = function (e) {
+             console.log("setting stream");
             remoteVideo.src = window.URL.createObjectURL(e.stream);
          };
 

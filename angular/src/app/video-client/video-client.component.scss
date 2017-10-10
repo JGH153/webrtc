@@ -1,0 +1,23 @@
+video {
+    background: black;
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+
+#localVideo {
+    width: 250px;
+    height: 250px;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+#remoteVideo {
+    width: 500px;
+    height: 500px;
+}
+
+.callTargetInput{
+    width: 40%;
+    margin: auto;
+}

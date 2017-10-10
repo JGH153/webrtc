@@ -1,0 +1,32 @@
+<div id = "callPage" class = "call-page">
+   <video id = "localVideo" [srcObject]="ownStream" autoplay muted></video>
+   <video id = "remoteVideo" [srcObject]="otherStream" autoplay></video>
+
+   <div class = "row">
+      <div class = "col-md-12">
+
+        <div class="input-group callTargetInput">
+            <input id = "callToUsernameInput" type = "text" class="form-control" name="callToUsernameInput"[(ngModel)]="callTargetId" placeholder = "username to call"  />
+            <span class="input-group-btn">
+                <button id = "callBtn" class = "btn-success btn" (click)="callUser()">Call</button>
+                <button id = "hangUpBtn" class = "btn-danger btn" (click)="hangUp()">Hang Up {{someVal}}</button>
+            </span>
+        </div>
+
+        <br />
+        {{connected}}
+        <br />
+
+
+
+
+
+         <!-- <br /><br />
+         <input id = "msgInput" type = "text"
+            placeholder = "Text to send" />
+         <button id = "sendMsgBtn" class = "btn-success btn">Send</button>
+         <div id="recivedMessagesBox">None yet</div> -->
+      </div>
+   </div>
+
+</div>
