@@ -9,7 +9,7 @@ video {
     height: 250px;
     position: absolute;
     top: 15px;
-    right: 15px;
+    left: 15px;
 }
 
 #remoteVideo {
@@ -17,7 +17,57 @@ video {
     height: 500px;
 }
 
+.call-page{
+    text-align: center;
+}
+
 .callTargetInput{
     width: 40%;
     margin: auto;
+
 }
+
+.chatInputBox{
+    width: 100%;
+}
+
+.flexContainer{
+    display: flex; /* or inline-flex */
+    flex-direction: row;
+
+    .flexbox1, .flexbox2{
+        // border: 1px solid red;
+        margin: 10px;
+
+    }
+
+    .flexbox1{
+        flex: 3;
+    }
+
+    .flexbox2{
+        flex: 1;
+    }
+}
+
+.flexContanierChat{
+    display: flex; /* or inline-flex */
+    flex-direction: column ;
+    height: 100%;
+
+    .flexboxText, .flexboxSend{
+        // border: 1px solid red;
+        margin: 5px;
+    }
+
+    .flexboxText{
+        flex: 4;
+    }
+
+    .flexboxSend{
+        flex-basis: auto; /* default auto */
+    }
+}
+
+
+

@@ -1,32 +1,71 @@
-<div id = "callPage" class = "call-page">
-   <video id = "localVideo" [srcObject]="ownStream" autoplay muted></video>
-   <video id = "remoteVideo" [srcObject]="otherStream" autoplay></video>
 
-   <div class = "row">
-      <div class = "col-md-12">
+<div class="flexContainer">
 
-        <div class="input-group callTargetInput">
-            <input id = "callToUsernameInput" type = "text" class="form-control" name="callToUsernameInput"[(ngModel)]="callTargetId" placeholder = "username to call"  />
-            <span class="input-group-btn">
-                <button id = "callBtn" class = "btn-success btn" (click)="callUser()">Call</button>
-                <button id = "hangUpBtn" class = "btn-danger btn" (click)="hangUp()">Hang Up {{someVal}}</button>
-            </span>
+    <div class="flexbox1">
+
+        <div id = "callPage" class = "call-page">
+            <video id = "localVideo" [srcObject]="ownStream" autoplay muted></video>
+            <video id = "remoteVideo" [srcObject]="otherStream" autoplay></video>
+
+            <div class = "row">
+                <div class = "col-md-12">
+
+                    <b>You are: </b>{{myUsername}}<br />
+
+                    <div class="input-group callTargetInput">
+                        <input id = "callToUsernameInput" type = "text" class="form-control" name="callToUsernameInput"[(ngModel)]="callTargetId" placeholder = "username to call"  />
+                        <span class="input-group-btn">
+                            <button id = "callBtn" class = "btn-success btn" (click)="callUser()">Call</button>
+                            <button id = "hangUpBtn" class = "btn-danger btn" (click)="hangUp()">Hang Up {{someVal}}</button>
+                        </span>
+                    </div>
+
+                    <br />
+                    {{connected}}
+                    <br />
+
+
+
+
+
+                    <!-- <br /><br />
+                    <input id = "msgInput" type = "text"
+                    placeholder = "Text to send" />
+                    <button id = "sendMsgBtn" class = "btn-success btn">Send</button>
+                    <div id="recivedMessagesBox">None yet</div> -->
+                </div>
+            </div>
+
         </div>
 
-        <br />
-        {{connected}}
-        <br />
+    </div>
+    <div class="flexbox2">
+
+        <div class="flexContanierChat" *ngIf="connected">
+            <div class="flexboxText">
+                Chat
+                <br />
+                <span *ngFor="let currentItem of localMessages; let i = index">
+                    <b>{{currentItem.author}}</b>: {{currentItem.message}}
+                    <br />
+                </span>
+            </div>
+            <div class="flexboxSend">
+                <form>
+                    <div class="input-group chatInputBox">
+
+                            <input type = "text" class="form-control" name="chatMessange"[(ngModel)]="chatInputMessage" placeholder = "What to say..."  />
+                            <span class="input-group-btn">
+                                <button id = "sendChatButton" class = "btn-success btn" (click)="sendMessage()">Send</button>
+                            </span>
 
 
+                    </div>
+                </form>
+            </div>
+        </div>
 
-
-
-         <!-- <br /><br />
-         <input id = "msgInput" type = "text"
-            placeholder = "Text to send" />
-         <button id = "sendMsgBtn" class = "btn-success btn">Send</button>
-         <div id="recivedMessagesBox">None yet</div> -->
-      </div>
-   </div>
+    </div>
 
 </div>
+

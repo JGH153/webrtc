@@ -12,7 +12,11 @@ export class VideoClientComponent implements OnInit {
     ownStream = null;
     otherStream = null;
     callTargetId = "b";
-    connected = "No"
+    connected = false;
+    chatInputMessage = "";
+    myUsername = "";
+
+    localMessages;
 
     constructor(
       private _websocketHandler: WebsocketHandlerService,
@@ -21,27 +25,38 @@ export class VideoClientComponent implements OnInit {
 
     ngOnInit() {
 
-        //templateUrl
-        // setTimeout(() => {
-        //     this._websocketHandler.setLogin("a");
-        // }, 100);
-
+        this.myUsername = this._websocketHandler.loginId;
 
         this._websocketHandler.setupOwnVideostreamAndPeerConnection().then((stream => {
             this.ownStream = this._websocketHandler.getLocalVideoStream();
-            //TODO handle other persions video feed
-            console.log("haha");
+
+            //TODO SUB TO NEW messages
+            setTimeout(() => {
+
+                this._websocketHandler.getIncommingMessagesObservable().subscribe(next => {
+                    this.handleNewMessages();
+                })
+
+            }, 0);
+
         }))
 
         this._websocketHandler.getNewIncommingVideoStreamSubject().subscribe(next => {
             this.handleSetStream(next);
         })
 
+
+
+    }
+
+    handleNewMessages(){
+        this.localMessages = this._websocketHandler.getLocalChatMessages();
+        this.ref.detectChanges();
     }
 
     handleSetStream(next){
         this.otherStream = next;
-        this.connected = "Connected";
+        this.connected = true;
         //need to manually trigger check
         this.ref.detectChanges();
     }
@@ -50,8 +65,18 @@ export class VideoClientComponent implements OnInit {
         this._websocketHandler.callUser(this.callTargetId);
     }
 
-    hangUp(){
+    sendMessage(){
+        if(this._websocketHandler.isConnected){
+            this._websocketHandler.sendMessageDataChannel(this.chatInputMessage);
+            this.handleNewMessages();
+            this.chatInputMessage = "";
+            this.ref.detectChanges();
+        }
 
+    }
+
+    hangUp(){
+        this._websocketHandler.hangUp();
     }
 
 }

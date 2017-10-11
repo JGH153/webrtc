@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Router, NavigationExtras } from '@angular/router';
 
+import { ChatMessages } from './interface/chat-messages.interface';
+
 import 'rxjs/Rx';
 import { Subject } from 'rxjs/Subject';
+import { Observable } from 'rxjs/Observable';
 
 @Injectable()
 export class WebsocketHandlerService {
@@ -14,6 +17,10 @@ export class WebsocketHandlerService {
     wsConnection;
     myRtcConnection;
     myDataChannel;
+    incommingMessageObservable:Observable<string>;
+    isConnected = false;
+
+    chatMessages:ChatMessages[] = [];
 
     newIncommingVideoStreamSubject:Subject<any> = new Subject();
 
@@ -71,11 +78,18 @@ export class WebsocketHandlerService {
     //when somebody sends us an offer
     handleOffer(offer, name) {
 
+        if(this.myRtcConnection == null && this.localVideoStream !== null){
+            this.setupPeerConnection(this.localVideoStream);
+            this.setupDataChannel();
+        }else if(this.localVideoStream === null){
+            console.log("No local video stream");
+            return;
+        }
+
         this.otherUserId = name;
         this.myRtcConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
         this.myRtcConnection.createAnswer((answer) => {
-            console.log("SEND ANSWER!")
             this.sendMessageToServer({
                 type: "answer",
                 answer: answer
@@ -96,7 +110,6 @@ export class WebsocketHandlerService {
 
     //when we got an answer from a remote user
     handleAnswer(answer) {
-        console.log("got ans")
         this.myRtcConnection.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
@@ -109,7 +122,20 @@ export class WebsocketHandlerService {
     }
 
     handleLeave() {
-        console.warn("TODO handleLeave" );
+
+        this.otherUserId = null;
+        this.isConnected = false;
+        this.newIncommingVideoStreamSubject.next(null);
+        this.myRtcConnection.close();
+        this.myRtcConnection = null;
+
+    }
+
+    hangUp(){
+        this.sendMessageToServer({
+            type: "leave"
+        });
+        this.handleLeave();
     }
 
     //TODO check if getmedia is supported and provide error
@@ -134,12 +160,17 @@ export class WebsocketHandlerService {
 
             navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
 
-                this.setupPeerConnection(stream);
+                this.localVideoStream = stream;
+
+                this.setupPeerConnection(this.localVideoStream);
                 this.setupDataChannel();
 
-                this.localVideoStream = stream;
                 resolve(true);
 
+            },
+            error => {
+                console.log("can't get media!")
+                console.log(error)
             });
 
         });
@@ -165,9 +196,18 @@ export class WebsocketHandlerService {
         this.myRtcConnection.addStream(stream);
 
         //when a remote user adds stream to the peer connection, we display it
-        this.myRtcConnection.onaddstream = (e) => {
-            console.log("incomming stream, need to handle!")
-            this.newIncommingVideoStreamSubject.next(e.stream)
+        //new but only in firefox
+        // this.myRtcConnection.ontrack = (event) => {
+        //     console.log("incomming stream, need to handle! NEW--->")
+        //     console.log(event.stream)
+        //     this.newIncommingVideoStreamSubject.next(event.stream[0])
+        // };
+
+        //depricated?
+        this.myRtcConnection.onaddstream = (event) => {
+            //console.log("incomming stream, need to handle!")
+            this.newIncommingVideoStreamSubject.next(event.stream);
+            this.isConnected = true;
         };
 
         // Setup ice handling
@@ -185,13 +225,27 @@ export class WebsocketHandlerService {
 
     setupDataChannel(){
         //setup recive data channel
-        this.myRtcConnection.ondatachannel = function(event) {
-            var receiveChannel = event.channel;
-            receiveChannel.onmessage = function(event) {
-                console.log("ondatachannel message:", event.data);
-                console.log(event);
+        // this.myRtcConnection.ondatachannel = function(event) {
+        //     var receiveChannel = event.channel;
+        //     receiveChannel.onmessage = function(event) {
+        //         console.log("ondatachannel message:", event.data);
+        //         console.log(event);
+        //     };
+        // };
+
+        this.incommingMessageObservable = new Observable(observer => {
+
+            this.myRtcConnection.ondatachannel = (event) => {
+                let receiveChannel = event.channel;
+                receiveChannel.onmessage = (event) => {
+                    //console.log("ondatachannel message:", event.data);
+                    this.addChatMessage(event.data, false);
+                    observer.next(event.data)
+                };
             };
-        };
+
+            () => {console.log("unsub!")}
+        });
 
         let dataChannelOptions = {
             reliable:true
@@ -199,13 +253,17 @@ export class WebsocketHandlerService {
 
         this.myDataChannel = this.myRtcConnection.createDataChannel("myDataChannel", dataChannelOptions);
 
-        this.myDataChannel.onerror = function (error) {
-            console.log("Error:", error);
-        };
+        // this.myDataChannel.onerror = function (error) {
+        //     console.log("Error:", error);
+        // };
 
-        this.myDataChannel.onmessage = function (event) {
-            console.log("Got message:", event.data);
-        };
+        // this.myDataChannel.onmessage = function (event) {
+        //     console.log("Got message:", event.data);
+        // };
+    }
+
+    getIncommingMessagesObservable(): Observable<string>{
+        return this.incommingMessageObservable;
     }
 
     getLocalVideoStream(){
@@ -243,8 +301,16 @@ export class WebsocketHandlerService {
         if(otherUserId.length > 0){
             this.otherUserId = otherUserId;
 
+            if(this.myRtcConnection == null && this.localVideoStream !== null){
+                this.setupPeerConnection(this.localVideoStream);
+                this.setupDataChannel();
+            }else if(this.localVideoStream === null){
+                console.log("No local video stream");
+                return;
+            }
+
             this.myRtcConnection.createOffer().then(offer => {
-                console.log("SEND OFFER-------------!!")
+                //console.log("SEND OFFER-------------!!")
                 this.sendMessageToServer({
                     type: "offer",
                     offer: offer
@@ -256,6 +322,31 @@ export class WebsocketHandlerService {
             })
 
         }
+    }
+
+    sendMessageDataChannel(message){
+        if(this.myDataChannel){
+            //console.log("sending message")
+            this.addChatMessage(message, true);
+            this.myDataChannel.send(message);
+        }
+    }
+
+    addChatMessage(newMessage, myselfAuthor){
+
+        let author = this.otherUserId;
+        if(myselfAuthor){
+            author = this.loginId;
+        }
+
+        this.chatMessages.push({
+            author: author,
+            message: newMessage
+        });
+    }
+
+    getLocalChatMessages(){
+        return this.chatMessages;
     }
 
 }
