@@ -17,8 +17,7 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
 
-        //templateUrlq
-
+        //for autologin testing
         // setTimeout(() => {
         //     this._websocketHandler.setLogin(Math.random().toString());
         // }, 100);
@@ -26,7 +25,6 @@ export class LoginComponent implements OnInit {
     }
 
     onLogin(){
-        console.log(this.loginId);
         this._websocketHandler.setLogin(this.loginId)
     }
 
