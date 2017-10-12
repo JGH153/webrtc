@@ -2,6 +2,8 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 
 import { WebsocketHandlerService } from './../websocket-handler.service';
 
+import {DomSanitizer} from '@angular/platform-browser';
+
 @Component({
   selector: 'artc-video-client',
   templateUrl: './video-client.component.html',
@@ -12,15 +14,19 @@ export class VideoClientComponent implements OnInit {
     ownStream = null;
     otherStream = null;
     callTargetId = "b";
-    connected = false;
+    connected = true; //DEBUG set back to false
     chatInputMessage = "";
     myUsername = "";
+    sendFilesInput;
+    downloadProgress = 10;
+    files = [];
 
     localMessages;
 
     constructor(
       private _websocketHandler: WebsocketHandlerService,
-      public ref: ChangeDetectorRef
+      public ref: ChangeDetectorRef,
+      private sanitizer:DomSanitizer
     ) { }
 
     ngOnInit() {
@@ -34,7 +40,23 @@ export class VideoClientComponent implements OnInit {
             setTimeout(() => {
 
                 this._websocketHandler.getIncommingMessagesObservable().subscribe(next => {
-                    this.handleNewMessages();
+                    if(next.type == 'chat'){
+                        this.handleNewMessages();
+                    }else if(next.type == 'file'){
+                        console.log("New file!");
+                        let fileName = next.data.fileName;
+                        let hrefObject = URL.createObjectURL(next.data.fileBlob)
+                        console.log(fileName);
+                        this.files.push({
+                            href: hrefObject,
+                            name: fileName
+                        });
+                        console.log(this.files)
+                        this.ref.detectChanges();
+                    }else{
+                        console.log("unknown type: " + next.type)
+                    }
+
                 })
 
             }, 0);
@@ -77,6 +99,21 @@ export class VideoClientComponent implements OnInit {
 
     hangUp(){
         this._websocketHandler.hangUp();
+    }
+
+    someFilesSelected(event){
+
+        this.downloadProgress = 50;
+        let file = event.target.files[0];
+
+        this._websocketHandler.sendFile(file);
+
+        // console.log(file.name);
+        // console.log(file.size);
+    }
+
+    sanitize(url:string){
+        return this.sanitizer.bypassSecurityTrustUrl(url);
     }
 
 }

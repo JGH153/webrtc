@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router, NavigationExtras } from '@angular/router';
 
 import { ChatMessages } from './interface/chat-messages.interface';
+import { DataChannelPacket } from './interface/data-channel-packet.interface';
 
 import 'rxjs/Rx';
 import { Subject } from 'rxjs/Subject';
@@ -17,12 +18,17 @@ export class WebsocketHandlerService {
     wsConnection;
     myRtcConnection;
     myDataChannel;
-    incommingMessageObservable:Observable<string>;
+    incommingMessageObservable:Observable<any>; //TODO add interface
     isConnected = false;
 
     chatMessages:ChatMessages[] = [];
 
     newIncommingVideoStreamSubject:Subject<any> = new Subject();
+
+    incommingFile:boolean = false;
+    incommingFileMetadata = null;
+    incommingFileBuffer = [];
+    incommingFileBufferSize = 0;
 
     constructor(
         private _router: Router
@@ -158,7 +164,7 @@ export class WebsocketHandlerService {
 
         let returnPromise = new Promise((resolve, reject) => {
 
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(stream => {
 
                 this.localVideoStream = stream;
 
@@ -223,24 +229,108 @@ export class WebsocketHandlerService {
 
     }
 
-    setupDataChannel(){
-        //setup recive data channel
-        // this.myRtcConnection.ondatachannel = function(event) {
-        //     var receiveChannel = event.channel;
-        //     receiveChannel.onmessage = function(event) {
-        //         console.log("ondatachannel message:", event.data);
-        //         console.log(event);
-        //     };
-        // };
+    handleIncommingFileArrayBuffer(arrayBuffer){
 
+        this.incommingFileBuffer.push(arrayBuffer);
+        this.incommingFileBufferSize += arrayBuffer.byteLength;
+
+        if(this.incommingFileBufferSize === this.incommingFileMetadata.fileSizeTotal){
+            //console.log("entire file done");
+            let recivedFile = new Blob(this.incommingFileBuffer);
+
+            this.incommingFileBuffer = [];
+            this.incommingFileBufferSize = 0;
+
+            let newFileObject = {
+                fileName: this.incommingFileMetadata.fileName,
+                fileBlob: recivedFile
+            }
+
+            //TODO add interface
+            let nextObject = {
+                type: "file",
+                data: newFileObject
+            }
+
+            this.incommingFile = false;
+
+            return nextObject;
+
+        }
+
+        return null;
+
+    }
+
+    setupDataChannel(){
         this.incommingMessageObservable = new Observable(observer => {
 
             this.myRtcConnection.ondatachannel = (event) => {
                 let receiveChannel = event.channel;
                 receiveChannel.onmessage = (event) => {
                     //console.log("ondatachannel message:", event.data);
-                    this.addChatMessage(event.data, false);
-                    observer.next(event.data)
+                    //console.log("New incomming message!");
+
+                    if(event.data instanceof ArrayBuffer || event.data instanceof Blob){
+                        //binary data file incomming!
+
+                        if(!this.incommingFile){
+                            console.log("Not expecting a file, returning!");
+                            return;
+                        }
+
+                        if(event.data instanceof ArrayBuffer){
+                            let returnValue = this.handleIncommingFileArrayBuffer(event.data);
+                            if(returnValue){
+                                observer.next(returnValue);
+                            }
+                        }else if(event.data instanceof Blob){
+                            //firefox recives as blob and we need to convert
+                            let fileReader = new FileReader();
+                            fileReader.onload = (event) => {
+                                let returnValue = this.handleIncommingFileArrayBuffer((<any>event.target).result);
+                                if(returnValue){
+                                    observer.next(returnValue);
+                                }
+                            };
+                            fileReader.readAsArrayBuffer(event.data);
+                        }
+
+
+
+                    }else{
+                        //normal json data
+                        console.log("json ")
+                        console.log(event.data);
+                        let dataObject:DataChannelPacket = JSON.parse(event.data);
+
+                        if(dataObject.type == 'chat'){
+                            this.addChatMessage(dataObject.data, false);
+                            let nextObject = {
+                                type: "chat",
+                                data: event.data
+                            }
+                            observer.next(nextObject)
+                        }else if(dataObject.type == 'file'){
+
+                            if(this.incommingFile){
+                                console.log("File already incomming!");
+                                return;
+                            }
+
+                            this.incommingFile = true;
+                            this.incommingFileMetadata  = {
+                                fileName: dataObject.data.fileName,
+                                fileSizeTotal: dataObject.data.fileSizeTotal
+                            }
+                            //console.log("Ready to recive file!");
+
+                        }else{
+                            console.log("unknown type: " + dataObject.type );
+                        }
+                    }
+
+
                 };
             };
 
@@ -262,7 +352,7 @@ export class WebsocketHandlerService {
         // };
     }
 
-    getIncommingMessagesObservable(): Observable<string>{
+    getIncommingMessagesObservable(): Observable<any>{
         return this.incommingMessageObservable;
     }
 
@@ -328,7 +418,11 @@ export class WebsocketHandlerService {
         if(this.myDataChannel){
             //console.log("sending message")
             this.addChatMessage(message, true);
-            this.myDataChannel.send(message);
+            let sendObject:DataChannelPacket = {
+                type: "chat",
+                data: message
+            };
+            this.myDataChannel.send( JSON.stringify(sendObject ));
         }
     }
 
@@ -347,6 +441,47 @@ export class WebsocketHandlerService {
 
     getLocalChatMessages(){
         return this.chatMessages;
+    }
+
+    sendFileChunck(file, offset){
+
+        let chunckSize = 16384; //16 kb
+
+        let fileReader = new FileReader();
+        fileReader.onload = (event) => {
+            console.log("sending")
+            console.log((<any>event.target).result)
+            this.myDataChannel.send((<any>event.target).result);
+            if(file.size > offset + (<any>event.target).result.byteLength){
+                //console.log("more to send");
+                setTimeout(() => {
+                    this.sendFileChunck(file, offset + chunckSize);
+                }, 0)
+            }else{
+                //console.log("all sendt")
+            }
+        };
+
+        let fileSlice = file.slice(offset, offset + chunckSize);
+        fileReader.readAsArrayBuffer(fileSlice);
+    }
+
+    sendFile(file){
+
+        //send headsup about file
+        let sendObject:DataChannelPacket = {
+            type: "file",
+            data: {
+                fileName: file.name,
+                fileSizeTotal: file.size
+            }
+        };
+
+        this.myDataChannel.send(JSON.stringify(sendObject));
+
+        this.sendFileChunck(file, 0);
+
+        //this.myDataChannel.send(message);
     }
 
 }

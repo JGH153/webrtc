@@ -19,20 +19,6 @@
                             <button id = "hangUpBtn" class = "btn-danger btn" (click)="hangUp()">Hang Up {{someVal}}</button>
                         </span>
                     </div>
-
-                    <br />
-                    {{connected}}
-                    <br />
-
-
-
-
-
-                    <!-- <br /><br />
-                    <input id = "msgInput" type = "text"
-                    placeholder = "Text to send" />
-                    <button id = "sendMsgBtn" class = "btn-success btn">Send</button>
-                    <div id="recivedMessagesBox">None yet</div> -->
                 </div>
             </div>
 
@@ -62,6 +48,20 @@
 
                     </div>
                 </form>
+            </div>
+            <div class="flexboxSend">
+                <!-- send file -->
+                <input type="file" name="sendFiles" [(ngModel)]="sendFilesInput" (change)="someFilesSelected($event)" /><br />
+                <progress [value]="downloadProgress" max="100"></progress><br />
+
+                <div>
+                    <h4>Files recived</h4>
+                    <span *ngFor="let currentItem of files; let i = index">
+                        <a [href]="sanitize(currentItem.href)" [download]="currentItem.name" >{{currentItem.name}}</a>
+                        <!-- download="currentItem.name" -->
+                    </span>
+                </div>
+
             </div>
         </div>
 
