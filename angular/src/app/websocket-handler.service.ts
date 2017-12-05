@@ -24,6 +24,7 @@ export class WebsocketHandlerService {
     chatMessages:ChatMessages[] = [];
 
     newIncommingVideoStreamSubject:Subject<any> = new Subject();
+    fileTransferProgressSubject:Subject<number> = new Subject();
 
     incommingFile:boolean = false;
     incommingFileMetadata = null;
@@ -35,7 +36,7 @@ export class WebsocketHandlerService {
     ) {}
 
     initialize(){
-        this.wsConnection = new WebSocket('ws://192.168.8.145:9095/');
+        this.wsConnection = new WebSocket('ws://localhost:9095/');
 
         this.wsConnection.onopen = () => {
            console.log("Connected to the signaling server");
@@ -233,6 +234,8 @@ export class WebsocketHandlerService {
 
         this.incommingFileBuffer.push(arrayBuffer);
         this.incommingFileBufferSize += arrayBuffer.byteLength;
+
+        this.fileTransferProgressSubject.next(this.incommingFileBufferSize / this.incommingFileMetadata.fileSizeTotal);
 
         if(this.incommingFileBufferSize === this.incommingFileMetadata.fileSizeTotal){
             //console.log("entire file done");
@@ -449,15 +452,19 @@ export class WebsocketHandlerService {
 
         let fileReader = new FileReader();
         fileReader.onload = (event) => {
-            console.log("sending")
-            console.log((<any>event.target).result)
+            // console.log("sending")
+            // console.log((<any>event.target).result)
             this.myDataChannel.send((<any>event.target).result);
+
+            this.fileTransferProgressSubject.next(offset / file.size);
+
             if(file.size > offset + (<any>event.target).result.byteLength){
                 //console.log("more to send");
                 setTimeout(() => {
                     this.sendFileChunck(file, offset + chunckSize);
                 }, 0)
             }else{
+                this.myDataChannel.send(1); //100%
                 //console.log("all sendt")
             }
         };
@@ -482,6 +489,10 @@ export class WebsocketHandlerService {
         this.sendFileChunck(file, 0);
 
         //this.myDataChannel.send(message);
+    }
+
+    getFileTransferProgressSubject(){
+        return this.fileTransferProgressSubject;
     }
 
 }

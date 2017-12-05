@@ -14,11 +14,11 @@ export class VideoClientComponent implements OnInit {
     ownStream = null;
     otherStream = null;
     callTargetId = "b";
-    connected = true; //DEBUG set back to false
+    connected = false; //DEBUG set back to false
     chatInputMessage = "";
     myUsername = "";
     sendFilesInput;
-    downloadProgress = 10;
+    downloadProgress = 0;
     files = [];
 
     localMessages;
@@ -67,6 +67,12 @@ export class VideoClientComponent implements OnInit {
             this.handleSetStream(next);
         })
 
+        this._websocketHandler.getFileTransferProgressSubject().subscribe(next => {
+            // console.log("NEXT!" + next)
+            this.downloadProgress = Math.floor(next*100);
+            this.ref.detectChanges();
+        });
+
 
 
     }
@@ -103,7 +109,7 @@ export class VideoClientComponent implements OnInit {
 
     someFilesSelected(event){
 
-        this.downloadProgress = 50;
+        this.downloadProgress = 0;
         let file = event.target.files[0];
 
         this._websocketHandler.sendFile(file);
