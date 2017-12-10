@@ -94,7 +94,7 @@ export class WebsocketHandlerService {
         }
 
         this.otherUserId = name;
-        this.myRtcConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        this.myRtcConnection.setRemoteDescription(offer);
 
         this.myRtcConnection.createAnswer((answer) => {
             this.sendMessageToServer({
@@ -117,7 +117,7 @@ export class WebsocketHandlerService {
 
     //when we got an answer from a remote user
     handleAnswer(answer) {
-        this.myRtcConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        this.myRtcConnection.setRemoteDescription(answer);
     }
 
     //when we got an ice candidate from a remote user
@@ -345,6 +345,7 @@ export class WebsocketHandlerService {
         };
 
         this.myDataChannel = this.myRtcConnection.createDataChannel("myDataChannel", dataChannelOptions);
+        console.log("DATA ONLINE?");
 
         // this.myDataChannel.onerror = function (error) {
         //     console.log("Error:", error);
@@ -369,8 +370,8 @@ export class WebsocketHandlerService {
             return;
         }
 
-        // console.log("Sending message to server: ")
-        // console.log(message)
+        console.log("Sending message to server: ")
+        console.log(message)
 
         //attach the other peer username to our messages
         if (this.otherUserId) {
