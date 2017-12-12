@@ -9,12 +9,18 @@ video {
     height: 250px;
     position: absolute;
     top: 15px;
-    left: 15px;
+	left: 15px;
+	// filter: grayscale(80%);
+	// filter: blur(2px);
+	// filter: contrast(200%);
+	// filter: hue-rotate(90deg);
+	// filter: drop-shadow(16px 16px 20px red) invert(75%);
 }
 
 #remoteVideo {
     width: 500px;
-    height: 500px;
+	height: 500px;
+	// filter: drop-shadow(16px 16px 20px red) invert(75%);
 }
 
 .call-page{
