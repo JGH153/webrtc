@@ -33,7 +33,7 @@ export class VideoClientComponent implements OnInit {
 
         this.myUsername = this._websocketHandler.loginId;
 
-        this._websocketHandler.setupOwnVideostreamAndPeerConnection().then((stream => {
+        this._websocketHandler.setupOwnVideostreamAndPeerConnection().subscribe((stream => {
             this.ownStream = this._websocketHandler.getLocalVideoStream();
 
             //TODO SUB TO NEW messages
@@ -94,13 +94,12 @@ export class VideoClientComponent implements OnInit {
     }
 
     sendMessage(){
-        if(this._websocketHandler.isConnected){
-            this._websocketHandler.sendMessageDataChannel(this.chatInputMessage);
+        if(this._websocketHandler.isConnected()){
+            this._websocketHandler.sendChatMessageDataChannel(this.chatInputMessage);
             this.handleNewMessages();
             this.chatInputMessage = "";
             this.ref.detectChanges();
         }
-
     }
 
     hangUp(){
