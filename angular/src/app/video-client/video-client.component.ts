@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 
-import { WebsocketHandlerService } from './../websocket-handler.service';
+import { WebRtcHandlerService } from '../webRtc-handler.service';
 
 import {DomSanitizer} from '@angular/platform-browser';
 
@@ -24,7 +24,7 @@ export class VideoClientComponent implements OnInit {
     localMessages;
 
     constructor(
-      private _websocketHandler: WebsocketHandlerService,
+      private _websocketHandler: WebRtcHandlerService,
       public ref: ChangeDetectorRef,
       private sanitizer:DomSanitizer
     ) { }
@@ -34,7 +34,10 @@ export class VideoClientComponent implements OnInit {
         this.myUsername = this._websocketHandler.loginId;
 
         this._websocketHandler.setupOwnVideostreamAndPeerConnection().subscribe((stream => {
-            this.ownStream = this._websocketHandler.getLocalVideoStream();
+
+			if (stream) {
+				this.ownStream = stream;
+			}
 
             //TODO SUB TO NEW messages
             setTimeout(() => {
@@ -71,7 +74,12 @@ export class VideoClientComponent implements OnInit {
             // console.log("NEXT!" + next)
             this.downloadProgress = Math.floor(next*100);
             this.ref.detectChanges();
-        });
+		});
+		
+		this._websocketHandler.getWebRtcConnectedChange().subscribe(next => {
+			this.connected = next;
+			this.ref.detectChanges();
+		})
 
 
 
@@ -84,7 +92,6 @@ export class VideoClientComponent implements OnInit {
 
     handleSetStream(next){
         this.otherStream = next;
-        this.connected = true;
         //need to manually trigger check
         this.ref.detectChanges();
     }
@@ -113,8 +120,6 @@ export class VideoClientComponent implements OnInit {
 
         this._websocketHandler.sendFile(file);
 
-        // console.log(file.name);
-        // console.log(file.size);
     }
 
     sanitize(url:string){

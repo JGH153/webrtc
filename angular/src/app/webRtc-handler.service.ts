@@ -10,7 +10,7 @@ import { Observable } from 'rxjs/Observable';
 import { VortexWebRTC } from './vortex-webrtc/vortexWebRTC';
 
 @Injectable()
-export class WebsocketHandlerService {
+export class WebRtcHandlerService {
 
     loginId = null;
     loggedIn = false;
@@ -38,7 +38,7 @@ export class WebsocketHandlerService {
 		
 		this.wsConnection = new WebSocket('ws://localhost:9095/');
         this.wsConnection.onopen = () => {
-			console.log("Connected to the signaling server");
+			// connected
         };
         this.wsConnection.onerror = (error) => {
 			console.log("Got error", error);
@@ -76,7 +76,7 @@ export class WebsocketHandlerService {
 
     handleLogin(success){
         if(!success){
-            console.log("username taken!");
+            console.warn("username taken!");
             return;
         }
 
@@ -93,7 +93,7 @@ export class WebsocketHandlerService {
 
 		// consider moving
 		this.vortexWebRTC.getUnhandledJsonDataPackets().subscribe((next) => {
-			console.log("TODO");
+			console.log("TODO getUnhandledJsonDataPackets ", next);
 		});
 		
 		return this.vortexWebRTC.initWebRTC({ video: true, audio: false })
@@ -115,14 +115,12 @@ export class WebsocketHandlerService {
         return this.localVideoStream;
     }
 
+	// move to class?
     sendMessageToServer(message){
         if(!this.wsConnection){
             console.error("WS connection not started");
             return;
         }
-
-        console.log("Sending message to server: ")
-        console.log(message)
 
         //attach the other peer username to our messages
         if (this.otherUserId) {
@@ -147,10 +145,6 @@ export class WebsocketHandlerService {
         if(otherUserId.length > 0){
             this.otherUserId = otherUserId;
 
-            if(this.localVideoStream === null){
-                console.warn("No local video stream");
-                return;
-			}
 			
 			this.vortexWebRTC.callUser(otherUserId);
 
@@ -173,6 +167,10 @@ export class WebsocketHandlerService {
 
     getFileTransferProgressSubject(){
         return this.vortexWebRTC.getFileTransferProgressSubject();
-    }
+	}
+	
+	getWebRtcConnectedChange() {
+		return this.vortexWebRTC.getWebRtcConnectedChange();
+	}
 
 }

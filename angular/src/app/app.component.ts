@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
-import { WebsocketHandlerService } from './websocket-handler.service';
+import { WebRtcHandlerService } from './webRtc-handler.service';
 
 @Component({
     selector: 'ARTC-root',
@@ -11,7 +11,7 @@ export class AppComponent  implements OnInit {
     title = 'ARTC';
 
     constructor(
-        private _websocketHandler: WebsocketHandlerService
+        private _websocketHandler: WebRtcHandlerService
     ) { }
 
     ngOnInit() {

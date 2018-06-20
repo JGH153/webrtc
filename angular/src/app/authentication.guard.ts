@@ -1,7 +1,7 @@
 import { Injectable, Inject, EventEmitter } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, NavigationExtras  } from '@angular/router';
 
-import { WebsocketHandlerService } from './websocket-handler.service';
+import { WebRtcHandlerService } from './webRtc-handler.service';
 
 import { Observable } from "rxjs/Rx";
 
@@ -12,7 +12,7 @@ export class AuthenticatedGuard implements CanActivate{
 	canActivateEE = new EventEmitter<boolean>();
 
 	constructor(
-		private _websocketHandler: WebsocketHandlerService,
+		private _websocketHandler: WebRtcHandlerService,
         private _router: Router
 	){
 		//console.log("online!");

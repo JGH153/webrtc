@@ -5,12 +5,14 @@ import { DataChannelPacket, ChatMessages } from './models';
 export class VortexWebRTC {
 
 	public isConnected: boolean = false;
+	private webRtcConnectedChange:Subject<boolean> = new Subject();
 
 	private wsConnection: WebSocket;
 	private authenticated: boolean = false;
 	private localVideoStream: MediaStream = null;
 	private myRtcConnection;//: RTCPeerConnection;
 	private myDataChannel;
+	private onlyDataChannel: boolean = false;
 
 	private loginId;
 	private otherUserId;
@@ -90,12 +92,13 @@ export class VortexWebRTC {
 			console.error('Need to be authenticated before initWebRTC');
 		}
 
-		if(audioVideoSettings.audio || audioVideoSettings.video) {
+		if(audioVideoSettings.video || audioVideoSettings.audio) {
 
 			return this.setupGetUserMedia(audioVideoSettings);
 			
 		} else {
-			// ONLY data channel! TODO
+			this.onlyDataChannel = true;
+			return this.setupOnlyDataChannel();
 		}
 
 	}
@@ -105,7 +108,6 @@ export class VortexWebRTC {
 		this.otherUserId = callUserWithId;
 
 		this.myRtcConnection.createOffer().then(offer => {
-			//console.log("SEND OFFER-------------!!")
 			this.sendMessageToServer({
 				type: "offer",
 				offer: offer
@@ -126,21 +128,28 @@ export class VortexWebRTC {
 		return this.unhandledJsonDataPackets;
 	}
 
+	public getWebRtcConnectedChange() {
+		return this.webRtcConnectedChange;
+	}
+
 	public sendChatMessageDataChannel(message){
         if(this.myDataChannel){
-            //console.log("sending message")
             this.addChatMessage(message, true);
             let sendObject:DataChannelPacket = {
                 type: "chat",
                 data: message
-            };
+			};
             this.myDataChannel.send( JSON.stringify(sendObject ));
         }
 	}
 	
 	public getLocalChatMessages(){
         return this.chatMessages;
-    }
+	}
+	
+	public onlyUsingDataChannel(){
+		return this.onlyDataChannel;
+	}
 
 	public sendFile(file){
 
@@ -169,20 +178,16 @@ export class VortexWebRTC {
 
         let fileReader = new FileReader();
         fileReader.onload = (event) => {
-            // console.log("sending")
-            // console.log((<any>event.target).result)
             this.myDataChannel.send((<any>event.target).result);
 
             this.fileTransferProgressSubject.next(offset / file.size);
 
             if(file.size > offset + (<any>event.target).result.byteLength){
-                //console.log("more to send");
                 setTimeout(() => {
                     this.sendFileChunck(file, offset + chunckSize);
                 }, 0)
             }else{
                 this.myDataChannel.send(1); //100%
-                //console.log("all sendt")
             }
         };
 
@@ -200,22 +205,15 @@ export class VortexWebRTC {
         this.otherUserId = name;
         this.myRtcConnection.setRemoteDescription(offer);
 
-        this.myRtcConnection.createAnswer((answer) => {
+        this.myRtcConnection.createAnswer().then(answer => {
             this.sendMessageToServer({
                 type: "answer",
                 answer: answer
             });
-
             return this.myRtcConnection.setLocalDescription(answer);
-        }, (error) => {
-            console.log("error:");
-            console.log(error)
         }).then(() => {
-            // console.log("handleOffer done!")
-        }, (error) => {
-            console.log("error:");
-            console.log(error)
-        })
+			// consider moving sending to here?
+		});
 
 	}
 
@@ -228,14 +226,15 @@ export class VortexWebRTC {
 	private handleCandidate(candidate) {
 
         this.myRtcConnection.addIceCandidate(new RTCIceCandidate(candidate)).then(() => {
-
+			// dont have to do anything
         })
 	}
 	
 	private handleLeave() {
 
         this.otherUserId = null;
-        this.isConnected = false;
+		this.isConnected = false;
+		this.webRtcConnectedChange.next(this.isConnected);
         this.newIncommingVideoStreamSubject.next(null);
         this.myRtcConnection.close();
         this.myRtcConnection = null;
@@ -262,6 +261,14 @@ export class VortexWebRTC {
 
 	}
 
+	private setupOnlyDataChannel() {
+		return new Observable(observer => {
+			this.setupPeerConnection(this.localVideoStream);
+			this.setupDataChannel();
+			observer.next(null);
+		});
+	}
+
 	private setupPeerConnection(stream: MediaStream){
 
         //using Google public stun server
@@ -271,21 +278,23 @@ export class VortexWebRTC {
 
         this.myRtcConnection = new RTCPeerConnection(configuration);
 
-		// setup stream listening
-		stream.getTracks().forEach((currentTrack: MediaStreamTrack) => {
-			this.myRtcConnection.addTrack(currentTrack);
-		})
-
-        this.myRtcConnection.ontrack = (event) => {
-			// can use ps over 0 of more steams/viedos
-            this.newIncommingVideoStreamSubject.next(event.streams[0]);
-            this.isConnected = true;
-        };
+		if (!this.onlyDataChannel) {
+			// setup stream listening
+			stream.getTracks().forEach((currentTrack: MediaStreamTrack) => {
+				this.myRtcConnection.addTrack(currentTrack);
+			});
+			
+			this.myRtcConnection.ontrack = (event) => {
+				// can use ps over 0 of more steams/viedos
+				this.newIncommingVideoStreamSubject.next(event.streams[0]);
+				this.isConnected = true;
+				this.webRtcConnectedChange.next(this.isConnected);
+			};
+		} 
 
         // Setup ice handling
         this.myRtcConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                //console.log("onicecandidate")
                 this.sendMessageToServer({
                     type: "candidate",
                     candidate: event.candidate
@@ -294,45 +303,55 @@ export class VortexWebRTC {
         };
 
 	}
+
+	private onDataChannelNewMessage(event, observer) {
+		
+		if(event.data instanceof ArrayBuffer || event.data instanceof Blob){
+			//binary data file incomming!
+			if(!this.incommingFile){
+				console.warn("Not expecting a file, returning!");
+				return;
+			}
+
+			if(event.data instanceof ArrayBuffer){
+				let returnValue = this.handleIncommingFileArrayBuffer(event.data);
+				if(returnValue){
+					observer.next(returnValue);
+				}
+			}else if(event.data instanceof Blob){
+				//firefox recives as blob and we need to convert
+				let fileReader = new FileReader();
+				fileReader.onload = (event) => {
+					let returnValue = this.handleIncommingFileArrayBuffer((<any>event.target).result);
+					if(returnValue){
+						observer.next(returnValue);
+					}
+				};
+				fileReader.readAsArrayBuffer(event.data);
+			}
+
+		}else{
+			// TODO TRY CATCH
+			let dataObject:DataChannelPacket = JSON.parse(event.data);
+			this.handleJsonDataChannelMessage(dataObject, event, observer);
+		}
+
+	}
 	
 	private setupDataChannel(){
 
 		this.incommingMessageObservable = new Observable(observer => {
 
             this.myRtcConnection.ondatachannel = (event) => {
+
+				if (this.onlyDataChannel) {
+					this.isConnected = true;
+					this.webRtcConnectedChange.next(this.isConnected);
+				}
+
                 let receiveChannel = event.channel;
-                receiveChannel.onmessage = (event) => {
-
-					if(event.data instanceof ArrayBuffer || event.data instanceof Blob){
-                        //binary data file incomming!
-                        if(!this.incommingFile){
-                            console.log("Not expecting a file, returning!");
-                            return;
-                        }
-
-                        if(event.data instanceof ArrayBuffer){
-                            let returnValue = this.handleIncommingFileArrayBuffer(event.data);
-                            if(returnValue){
-                                observer.next(returnValue);
-                            }
-                        }else if(event.data instanceof Blob){
-                            //firefox recives as blob and we need to convert
-                            let fileReader = new FileReader();
-                            fileReader.onload = (event) => {
-                                let returnValue = this.handleIncommingFileArrayBuffer((<any>event.target).result);
-                                if(returnValue){
-                                    observer.next(returnValue);
-                                }
-                            };
-                            fileReader.readAsArrayBuffer(event.data);
-                        }
-
-					}else{
-						// TODO TRY CATCH
-						let dataObject:DataChannelPacket = JSON.parse(event.data);
-						this.handleJsonDataChannelMessage(dataObject, event, observer);
-					}
-
+                receiveChannel.onmessage = (event) => {			
+					this.onDataChannelNewMessage(event, observer);
 				};
             };
 
@@ -344,7 +363,7 @@ export class VortexWebRTC {
 		let dataChannelOptions = {
 		};
 
-        this.myDataChannel = this.myRtcConnection.createDataChannel("myDataChannel", dataChannelOptions);
+		this.myDataChannel = this.myRtcConnection.createDataChannel("myDataChannel", dataChannelOptions);
 
 	}
 
@@ -356,7 +375,6 @@ export class VortexWebRTC {
         this.fileTransferProgressSubject.next(this.incommingFileBufferSize / this.incommingFileMetadata.fileSizeTotal);
 
         if(this.incommingFileBufferSize === this.incommingFileMetadata.fileSizeTotal){
-            //console.log("entire file done");
             let recivedFile = new Blob(this.incommingFileBuffer);
 
             this.incommingFileBuffer = [];
@@ -395,7 +413,7 @@ export class VortexWebRTC {
 		}else if(jsonMessage.type == 'file'){
 
 			if(this.incommingFile){
-				console.log("File already incomming!");
+				console.warn("File already incomming!");
 				return;
 			}
 
@@ -404,7 +422,6 @@ export class VortexWebRTC {
 				fileName: jsonMessage.data.fileName,
 				fileSizeTotal: jsonMessage.data.fileSizeTotal
 			}
-			console.log("Ready to recive file!");
 
 		}else{
 			console.log("unknown type: " + jsonMessage.type );
@@ -432,8 +449,8 @@ export class VortexWebRTC {
             return;
         }
 
-        console.log("Sending message to server: ")
-        console.log(message)
+        // console.log("Sending message to server: ")
+        // console.log(message)
 
         //attach the other peer username to our messages
         if (this.otherUserId) {

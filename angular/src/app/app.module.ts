@@ -7,7 +7,7 @@ import { AppComponent } from './app.component';
 
 import { AuthenticatedGuard }  from './authentication.guard';
 
-import { WebsocketHandlerService } from './websocket-handler.service';
+import { WebRtcHandlerService } from './webRtc-handler.service';
 
 import { LoginComponent } from './login/login.component';
 import { VideoClientComponent } from './video-client/video-client.component';
@@ -26,7 +26,7 @@ import { NavbarComponent } from './navbar/navbar.component';
     FormsModule
   ],
   providers: [
-      WebsocketHandlerService,
+      WebRtcHandlerService,
       AuthenticatedGuard
   ],
   bootstrap: [AppComponent]

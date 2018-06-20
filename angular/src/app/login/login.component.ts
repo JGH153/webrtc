@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
-import { WebsocketHandlerService } from './../websocket-handler.service';
+import { WebRtcHandlerService } from '../webRtc-handler.service';
 
 @Component({
   selector: 'artc-login',
@@ -12,7 +12,7 @@ export class LoginComponent implements OnInit {
     loginId = "";
 
     constructor(
-        private _websocketHandler: WebsocketHandlerService
+        private _websocketHandler: WebRtcHandlerService
     ) { }
 
     ngOnInit() {
