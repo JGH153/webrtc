@@ -1,0 +1,13 @@
+<p>
+  image-manipulation works!
+</p>
+
+<canvas #canvas width="640" height="480"></canvas>
+<div>
+  <input (click)="greyscale()" value="Grayscale" type="button">
+  <input (click)="invert()" id="invertbtn" value="Invert" type="button">
+  <input (click)="changeImg()" id="invertbtn" value="changeImg" type="button">
+  <input (click)="pixelateImage()" id="invertbtn" value="pixelateImage" type="button">
+  <input (click)="edgeDetector()" id="invertbtn" value="edgeDetector" type="button">
+  <input type="range" min="0" max="500" name="edgeThreshold" [(ngModel)]="edgeThreshold" (change)="onChangeThreshold()">
+</div>

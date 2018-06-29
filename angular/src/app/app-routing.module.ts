@@ -5,6 +5,7 @@ import { AuthenticatedGuard }  from './authentication.guard';
 
 import { LoginComponent } from './login/login.component';
 import { VideoClientComponent } from './video-client/video-client.component';
+import { ImageManipulationComponent } from './image-manipulation/image-manipulation.component';
 
 //TODO add router guard for video if not logged inn
 const routes: Routes = [
@@ -12,6 +13,10 @@ const routes: Routes = [
         path: '',
         redirectTo: '/login',
         pathMatch: 'full'
+    },
+    {
+        path: 'image',
+        component: ImageManipulationComponent
     },
     {
         path: 'login',
