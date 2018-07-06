@@ -13,6 +13,7 @@ import { LoginComponent } from './login/login.component';
 import { VideoClientComponent } from './video-client/video-client.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { ImageManipulationComponent } from './image-manipulation/image-manipulation.component';
+import { DrawingComponent } from './drawing/drawing.component';
 
 @NgModule({
    declarations: [
@@ -20,7 +21,8 @@ import { ImageManipulationComponent } from './image-manipulation/image-manipulat
       LoginComponent,
       VideoClientComponent,
       NavbarComponent,
-      ImageManipulationComponent
+      ImageManipulationComponent,
+      DrawingComponent
    ],
    imports: [
       BrowserModule,
