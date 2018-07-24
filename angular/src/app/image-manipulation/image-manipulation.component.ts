@@ -18,8 +18,8 @@ export class ImageManipulationComponent implements OnInit {
 
 	ngOnInit() {
 
-		var img = new Image();
-		img.crossOrigin = "Anonymous";
+		const img = new Image();
+		img.crossOrigin = 'Anonymous';
 		img.src = 'assets/engine.png';
 		img.onload = () => {
 			this.draw(img);
@@ -28,21 +28,21 @@ export class ImageManipulationComponent implements OnInit {
 	}
 
 	draw(img) {
-		var canvas = this.canvas.nativeElement;
+		const canvas = this.canvas.nativeElement;
 		this.ctx = canvas.getContext('2d');
 		this.ctx.drawImage(img, 0, 0);
 		img.style.display = 'none';
 		this.imageData = this.ctx.getImageData(0, 0, canvas.width, canvas.height);
 		this.data = this.imageData.data;
 		this.orginaleImageData = this.imageData;
-		console.log('img online', this.data)
+		console.log('img online', this.data);
 
 	}
 
 	greyscale() {
-		console.log("grey");
-		for (var i = 0; i < this.data.length; i += 4) {
-			var avg = (this.data[i] + this.data[i + 1] + this.data[i + 2]) / 3;
+		console.log('grey');
+		for (let i = 0; i < this.data.length; i += 4) {
+			const avg = (this.data[i] + this.data[i + 1] + this.data[i + 2]) / 3;
 			this.data[i] = avg; // red
 			this.data[i + 1] = avg; // green
 			this.data[i + 2] = avg; // blue
@@ -51,8 +51,8 @@ export class ImageManipulationComponent implements OnInit {
 	}
 
 	invert() {
-		console.log("invert");
-		for (var i = 0; i < this.data.length; i += 4) {
+		console.log('invert');
+		for (let i = 0; i < this.data.length; i += 4) {
 			this.data[i] = 255 - this.data[i];     // red
 			this.data[i + 1] = 255 - this.data[i + 1]; // green
 			this.data[i + 2] = 255 - this.data[i + 2]; // blue
@@ -66,8 +66,8 @@ export class ImageManipulationComponent implements OnInit {
 
 	pixelateImage() {
 		const dataCopy = this.data.slice(0);
-		for (var i = 0; i < this.data.length; i += (4 * 2)) {
-			let targetPixelIndex = i - 4;
+		for (let i = 0; i < this.data.length; i += (4 * 2)) {
+			const targetPixelIndex = i - 4;
 			if (i < 0) {
 				continue;
 			}
@@ -83,7 +83,7 @@ export class ImageManipulationComponent implements OnInit {
 		// console.log("changeImg");
 		// const change = 100;
 		const dataCopy = this.data.slice(0);
-		for (var i = 0; i < this.data.length; i += 4) {
+		for (let i = 0; i < this.data.length; i += 4) {
 
 			// const x = (i / 4) % this.canvas.nativeElement.width;
 			// const y = Math.floor((i / 4) / this.canvas.nativeElement.height);
@@ -99,7 +99,7 @@ export class ImageManipulationComponent implements OnInit {
 			// console.log(this.data[i], targetPixelIndex);
 
 			if (targetPixelIndex < 0) {
-				targetPixelIndex += this.data.length
+				targetPixelIndex += this.data.length;
 			}
 
 			// https://stackoverflow.com/questions/13660723/get-x-and-y-pixel-coordinates-when-iterating-over-html5-canvas-getimagedata/20445915
@@ -124,7 +124,7 @@ export class ImageManipulationComponent implements OnInit {
 	edgeDetector() {
 
 
-		console.log("starting");
+		console.log('starting');
 		// TODO copy of data
 		const dataCopy = this.data.slice(0);
 		for (let y = 0; y < this.canvas.nativeElement.height; y++) {
@@ -145,14 +145,14 @@ export class ImageManipulationComponent implements OnInit {
 			new Uint8ClampedArray(this.orginaleImageData.data),
 			this.canvas.nativeElement.width,
 			this.canvas.nativeElement.height
-		)
+		);
 
 		this.ctx.putImageData(this.imageData, 0, 0);
 		this.imageData = imageDataCopy;
 
 
 
-		console.log("ending");
+		console.log('ending');
 	}
 
 	isPixelAtEdge(data, x, y) {
@@ -191,11 +191,11 @@ export class ImageManipulationComponent implements OnInit {
 
 	getPixelColorAtIndex(data, index) {
 		return {
-			"red": data[index],
-			"green": data[index + 1],
-			"blue": data[index + 2],
-			"alpha": data[index + 3],
-		}
+			'red': data[index],
+			'green': data[index + 1],
+			'blue': data[index + 2],
+			'alpha': data[index + 3],
+		};
 	}
 
 	setPixelColor(data, x, y, red, green, blue, alpha = 255) {
