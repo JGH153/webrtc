@@ -12,7 +12,7 @@ export class DrawingComponent implements OnInit, AfterViewInit {
 	constructor() { }
 
 	ngOnInit() {
-		
+
 	}
 
 	ngAfterViewInit() {

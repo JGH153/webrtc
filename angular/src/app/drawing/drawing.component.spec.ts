@@ -6,23 +6,23 @@ import { DebugElement } from '@angular/core';
 import { DrawingComponent } from './drawing.component';
 
 describe('DrawingComponent', () => {
-  let component: DrawingComponent;
-  let fixture: ComponentFixture<DrawingComponent>;
+	let component: DrawingComponent;
+	let fixture: ComponentFixture<DrawingComponent>;
 
-  beforeEach(async(() => {
-    TestBed.configureTestingModule({
-      declarations: [ DrawingComponent ]
-    })
-    .compileComponents();
-  }));
+	beforeEach(async(() => {
+		TestBed.configureTestingModule({
+			declarations: [DrawingComponent]
+		})
+			.compileComponents();
+	}));
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(DrawingComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(DrawingComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

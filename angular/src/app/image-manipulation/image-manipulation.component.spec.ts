@@ -6,23 +6,23 @@ import { DebugElement } from '@angular/core';
 import { ImageManipulationComponent } from './image-manipulation.component';
 
 describe('ImageManipulationComponent', () => {
-  let component: ImageManipulationComponent;
-  let fixture: ComponentFixture<ImageManipulationComponent>;
+	let component: ImageManipulationComponent;
+	let fixture: ComponentFixture<ImageManipulationComponent>;
 
-  beforeEach(async(() => {
-    TestBed.configureTestingModule({
-      declarations: [ ImageManipulationComponent ]
-    })
-    .compileComponents();
-  }));
+	beforeEach(async(() => {
+		TestBed.configureTestingModule({
+			declarations: [ImageManipulationComponent]
+		})
+			.compileComponents();
+	}));
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(ImageManipulationComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(ImageManipulationComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

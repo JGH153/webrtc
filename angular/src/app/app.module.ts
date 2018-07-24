@@ -1,11 +1,11 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule }   from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
-import { AuthenticatedGuard }  from './authentication.guard';
+import { AuthenticatedGuard } from './authentication.guard';
 
 import { WebRtcHandlerService } from './webRtc-handler.service';
 
@@ -16,25 +16,25 @@ import { ImageManipulationComponent } from './image-manipulation/image-manipulat
 import { DrawingComponent } from './drawing/drawing.component';
 
 @NgModule({
-   declarations: [
-      AppComponent,
-      LoginComponent,
-      VideoClientComponent,
-      NavbarComponent,
-      ImageManipulationComponent,
-      DrawingComponent
-   ],
-   imports: [
-      BrowserModule,
-      AppRoutingModule,
-      FormsModule
-   ],
-   providers: [
-      WebRtcHandlerService,
-      AuthenticatedGuard
-   ],
-   bootstrap: [
-      AppComponent
-   ]
+	declarations: [
+		AppComponent,
+		LoginComponent,
+		VideoClientComponent,
+		NavbarComponent,
+		ImageManipulationComponent,
+		DrawingComponent
+	],
+	imports: [
+		BrowserModule,
+		AppRoutingModule,
+		FormsModule
+	],
+	providers: [
+		WebRtcHandlerService,
+		AuthenticatedGuard
+	],
+	bootstrap: [
+		AppComponent
+	]
 })
 export class AppModule { }
