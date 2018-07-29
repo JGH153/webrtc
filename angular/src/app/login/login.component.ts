@@ -25,7 +25,7 @@ export class LoginComponent implements OnInit {
 	}
 
 	onLogin() {
-		this._websocketHandler.setLogin(this.loginId)
+		this._websocketHandler.setLogin(this.loginId);
 	}
 
 }
