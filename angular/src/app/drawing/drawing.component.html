@@ -1,13 +1,4 @@
-<canvas 
-	(mousemove)="onMouseMove($event)"
-	(mousedown)="onCanvasMouseDown($event)"
-	(mouseup)="onCanvasMouseRelease()"
-	(mouseenter)="onCanvasMouseEnter()"
-	(mouseleave)="onCanvasMouseLeave()"
-	(touchmove)="onTouchmove($event)"
-	#canvas
-	width="800"
-	height="800"
-	style="border: 1px solid black"
-	></canvas>
-<button (click)="clear()">Clear</button>
+<ARTC-canvas
+	*ngIf="showCanvas"
+	(newDrawingPoint)="onNewDrawingPoint($event)"
+></ARTC-canvas>

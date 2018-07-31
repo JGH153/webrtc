@@ -14,6 +14,8 @@ import { VideoClientComponent } from './video-client/video-client.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { ImageManipulationComponent } from './image-manipulation/image-manipulation.component';
 import { DrawingComponent } from './drawing/drawing.component';
+import { CanvasComponent } from './drawing/canvas/canvas.component';
+import { DrawingWebrtcService } from './drawing/drawing-webrtc.service';
 
 @NgModule({
 	declarations: [
@@ -22,7 +24,8 @@ import { DrawingComponent } from './drawing/drawing.component';
 		VideoClientComponent,
 		NavbarComponent,
 		ImageManipulationComponent,
-		DrawingComponent
+		DrawingComponent,
+		CanvasComponent
 	],
 	imports: [
 		BrowserModule,
@@ -31,7 +34,8 @@ import { DrawingComponent } from './drawing/drawing.component';
 	],
 	providers: [
 		WebRtcHandlerService,
-		AuthenticatedGuard
+		AuthenticatedGuard,
+		DrawingWebrtcService
 	],
 	bootstrap: [
 		AppComponent
