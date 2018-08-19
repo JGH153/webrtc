@@ -1,0 +1,169 @@
+//require our websocket library
+const WebSocketServer = require('ws').Server;
+
+//creating a websocket server at port 9090
+const wss = new WebSocketServer({ port: 9095 });
+
+//all connected to the server users
+var users = {};
+
+let lastUserId = 0;
+let availableUser = null;
+
+/*
+Flow:
+
+User A connects
+User A is assigned ID 10 (gudi/rand?/icrement?)
+Server says no match is ready to A
+User A goes into loading
+
+User B connects
+User B is assigned ID 20
+Server says a match is present to B (id of A)
+
+User B creates offer and send via server to A
+A sends accept to B via server
+ICE is relayed between the two
+Connected!
+*/
+
+wss.on('connection', onConnection);
+
+function onConnection(connection) {
+	console.log('connected!');
+	connection.on('message', function (message) {
+		onMessage(connection, message);
+	}
+	);
+	connection.on("close", function () {
+		onConnectionClose(connection);
+	});
+
+	const currentUserId = lastUserId++;
+	users[currentUserId] = connection;
+	connection.myUserId = currentUserId; // TODO config object?
+	connection.otherUserId = null;
+
+	// send match if present, or none if waiting
+	if (availableUser === null) {
+		sendTo(connection, {
+			type: "match",
+			yourUserId: currentUserId,
+			matchId: null
+		});
+		availableUser = currentUserId;
+	} else {
+		sendTo(connection, {
+			type: "match",
+			yourUserId: currentUserId,
+			matchId: availableUser
+		});
+		availableUser = null;
+	}
+}
+
+function onMessage(connection, message) {
+	let data;
+	//accepting only JSON messages
+	try {
+		data = JSON.parse(message);
+	} catch (e) {
+		console.log("Invalid JSON");
+		data = {};
+	}
+
+	//switching type of the user message
+	switch (data.type) {
+		case "offer":
+		//for ex. UserA wants to call UserB
+		console.log("Sending offer to: ", data.name);
+
+		//if UserB exists then send him offer details
+		var conn = users[data.name];
+
+		if (conn != null) {
+			//setting that UserA connected with UserB
+			connection.otherUserId = data.name;
+
+			sendTo(conn, {
+				type: "offer",
+				offer: data.offer,
+				name: connection.myUserId
+			});
+		}
+
+		break;
+
+	case "answer":
+		console.log("Sending answer to: ", data.name);
+		//for ex. UserB answers UserA
+		var conn = users[data.name];
+
+		if (conn != null) {
+			connection.otherUserId = data.name;
+			sendTo(conn, {
+				type: "answer",
+				answer: data.answer
+			});
+		}
+
+		break;
+
+	case "candidate":
+		console.log("Sending candidate to:", data.name);
+		var conn = users[data.name];
+
+		if (conn != null) {
+			sendTo(conn, {
+				type: "candidate",
+				candidate: data.candidate
+			});
+		}
+
+		break;
+
+	case "leave":
+		console.log("Disconnecting from", data.name);
+		var conn = users[data.name];
+		conn.otherUserId = null;
+
+		//notify the other user so he can disconnect his peer connection
+		if (conn != null) {
+			sendTo(conn, {
+				type: "leave"
+			});
+		}
+
+		break;
+
+	default:
+		sendTo(connection, {
+			type: "error",
+			message: "Command not found: " + data.type
+		});
+
+		break;
+	}
+
+}
+
+function onConnectionClose(connection) {
+	delete users[connection.myUserId];
+
+	if (connection.otherUserId) {
+		console.log("Disconnecting from ", connection.otherUserId);
+		var conn = users[connection.otherUserId];
+		conn.otherUserId = null;
+
+		if (conn != null) {
+			sendTo(conn, {
+				type: "leave"
+			});
+		}
+	}
+}
+
+function sendTo(connection, message) {
+	connection.send(JSON.stringify(message));
+}
