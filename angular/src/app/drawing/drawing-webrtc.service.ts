@@ -1,22 +1,34 @@
 import { Injectable } from '@angular/core';
 import { VortexWebRTC } from '../vortex-webrtc/vortexWebRTC';
+import { MatchDataPacket } from '../vortex-webrtc/models';
+import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { NewCanvasDrawingEvent } from '../interface/canvas.interfaces';
 
-@Injectable()
+const POINTS_TYPE = 'points';
+
+@Injectable({
+	providedIn: 'root'
+})
 export class DrawingWebrtcService {
 
 	myId = null;
 	otherId = null;
+	matchUserId = null;
 
 	wsConnection;
 	loggedIn = false;
 	vortexWebRTC: VortexWebRTC;
+
+	private connected = new BehaviorSubject<boolean>(false);
+	private incomminPoints = new Subject<NewCanvasDrawingEvent>();
 
 	constructor() { }
 
 	// TODO change to auto connect/login
 	connectToSingalingServer(): any {
 
-		this.wsConnection = new WebSocket('ws://localhost:9095/');
+		this.wsConnection = new WebSocket('ws://localhost:9065/');
 		this.wsConnection.onopen = () => {
 			// connected
 		};
@@ -32,22 +44,73 @@ export class DrawingWebrtcService {
 		this.vortexWebRTC = new VortexWebRTC();
 		this.vortexWebRTC.addWsConnection(this.wsConnection);
 
+		// consider moving
+		this.vortexWebRTC.getUnhandledJsonDataPackets().subscribe((next) => {
+			if (next.type === POINTS_TYPE) {
+				this.onIncommingPoints(next.data as NewCanvasDrawingEvent);
+			} else {
+				console.warn('unknown type');
+			}
+		});
+
+		this.vortexWebRTC.getWebRtcConnectedChange().subscribe((isConnected) => {
+			console.log('isConnected: ', isConnected);
+			this.connected.next(isConnected);
+		});
+	}
+
+	isConnected() {
+		return this.connected.asObservable();
+	}
+
+	getIncomminPoints() {
+		return this.incomminPoints.asObservable();
 	}
 
 	handleNewSocketMessage(newMessage) {
 
 		const data = JSON.parse(newMessage.data);
-		console.log(newMessage);
 
-		// switch (data.type) {
-		// 	case 'login':
-		// 		this.handleLogin(data.success);
-		// 		break;
-		// 	default:
-		// 		break;
-		// }
+		switch (data.type) {
+			case 'match':
+				this.handleMatchMessage(data as MatchDataPacket);
+				break;
+			default:
+				break;
+		}
 
 	}
 
+	handleMatchMessage(data: MatchDataPacket) {
+		this.vortexWebRTC.setLoginId(data.yourUserId, true);
+
+		this.vortexWebRTC.initWebRTC({ video: false, audio: false }).subscribe((next) => {
+
+			this.vortexWebRTC.getIncommingMessagesObservable().subscribe(newMessages => {
+				console.log('newMessages!', newMessages);
+			});
+
+			if (data.matchId) {
+				console.log('calling other user ', data.matchId);
+				this.matchUserId = data.matchId;
+				this.vortexWebRTC.callUser(data.matchId);
+			} else {
+				console.log('no match, waiting');
+			}
+		});
+
+
+	}
+
+	sendNewPoints(points: NewCanvasDrawingEvent) {
+		this.vortexWebRTC.sendCustomJsonDataOverDataChannel({
+			data: points,
+			type: POINTS_TYPE
+		});
+	}
+
+	onIncommingPoints(newPoint: NewCanvasDrawingEvent) {
+		this.incomminPoints.next(newPoint);
+	}
 
 }

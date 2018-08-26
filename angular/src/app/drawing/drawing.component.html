@@ -1,4 +1,7 @@
-<ARTC-canvas
-	*ngIf="showCanvas"
-	(newDrawingPoint)="onNewDrawingPoint($event)"
-></ARTC-canvas>
+1<ng-container *ngIf="loading">
+	Loading!
+</ng-container>
+
+<ng-container *ngIf="!loading">
+	<ARTC-canvas *ngIf="showCanvas" (newDrawingPoint)="onNewDrawingPoint($event)"></ARTC-canvas>
+</ng-container>

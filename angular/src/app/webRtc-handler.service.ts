@@ -35,7 +35,7 @@ export class WebRtcHandlerService {
 	) { }
 
 	initialize() {
-
+		
 		this.wsConnection = new WebSocket('ws://localhost:9095/');
 		this.wsConnection.onopen = () => {
 			// connected

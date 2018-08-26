@@ -15,6 +15,6 @@ export class AppComponent implements OnInit {
 	) { }
 
 	ngOnInit() {
-		this._websocketHandler.initialize();
+
 	}
 }

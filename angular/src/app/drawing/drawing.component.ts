@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { NewCanvasDrawingEvent } from '../interface/canvas.interfaces';
 import { DrawingWebrtcService } from './drawing-webrtc.service';
 
@@ -10,8 +10,10 @@ import { DrawingWebrtcService } from './drawing-webrtc.service';
 export class DrawingComponent implements OnInit, AfterViewInit {
 
 	public showCanvas = false;
+	public callTargetId;
+	public loading = true;
 
-	constructor(private drawingWebrtcService: DrawingWebrtcService) { }
+	constructor(private drawingWebrtcService: DrawingWebrtcService, public ref: ChangeDetectorRef) { }
 
 	ngOnInit() {
 		this.drawingWebrtcService.connectToSingalingServer();
@@ -19,11 +21,18 @@ export class DrawingComponent implements OnInit, AfterViewInit {
 	}
 
 	ngAfterViewInit() {
+		this.drawingWebrtcService.isConnected().subscribe((isConnected) => {
+			this.loading = !isConnected;
+			this.ref.detectChanges();
+		});
+	}
 
+	isConnected() {
+		return this.drawingWebrtcService.isConnected();
 	}
 
 	onNewDrawingPoint(points: NewCanvasDrawingEvent) {
-		console.log(points);
+		this.drawingWebrtcService.sendNewPoints(points);
 	}
 
 }

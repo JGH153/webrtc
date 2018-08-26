@@ -1,8 +1,8 @@
 //require our websocket library
 const WebSocketServer = require('ws').Server;
 
-//creating a websocket server at port 9090
-const wss = new WebSocketServer({ port: 9095 });
+//creating a websocket server at port 9065
+const wss = new WebSocketServer({ port: 9065 });
 
 //all connected to the server users
 var users = {};
@@ -31,7 +31,7 @@ Connected!
 wss.on('connection', onConnection);
 
 function onConnection(connection) {
-	console.log('connected!');
+	
 	connection.on('message', function (message) {
 		onMessage(connection, message);
 	}
@@ -47,6 +47,7 @@ function onConnection(connection) {
 
 	// send match if present, or none if waiting
 	if (availableUser === null) {
+		console.log('connected! no match');
 		sendTo(connection, {
 			type: "match",
 			yourUserId: currentUserId,
@@ -54,6 +55,7 @@ function onConnection(connection) {
 		});
 		availableUser = currentUserId;
 	} else {
+		console.log('connected! match!');
 		sendTo(connection, {
 			type: "match",
 			yourUserId: currentUserId,
@@ -150,6 +152,11 @@ function onMessage(connection, message) {
 
 function onConnectionClose(connection) {
 	delete users[connection.myUserId];
+
+	if (availableUser === connection.myUserId) {
+		console.log('removing as waiting match');
+		availableUser = null;
+	}
 
 	if (connection.otherUserId) {
 		console.log("Disconnecting from ", connection.otherUserId);

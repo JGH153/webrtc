@@ -1,4 +1,4 @@
-import { Subject ,  Observable } from 'rxjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
 import { DataChannelPacket, ChatMessages } from './models';
 
 export class VortexWebRTC {
@@ -17,7 +17,7 @@ export class VortexWebRTC {
 	private otherUserId;
 	private chatMessages: ChatMessages[] = [];
 
-	private incommingMessageObservable: Observable<any>; // TODO add interface
+	private incommingMessages: Subject<any> = new Subject(); // TODO add interface
 	private newIncommingVideoStreamSubject: Subject<any> = new Subject();
 
 	private fileTransferProgressSubject: Subject<number> = new Subject();
@@ -38,12 +38,15 @@ export class VortexWebRTC {
 	}
 
 	public getIncommingMessagesObservable(): Observable<any> {
-		return this.incommingMessageObservable;
+		return this.incommingMessages.asObservable();
 	}
 
 	// TODO make sure it is set befor connecting!
-	public setLoginId(id) {
+	public setLoginId(id, setAuthenticated = false) {
 		this.loginId = id;
+		if (setAuthenticated) {
+			this.authenticated = true;
+		}
 	}
 
 	public handleNewSocketMessage(newMessage) {
@@ -140,6 +143,10 @@ export class VortexWebRTC {
 			};
 			this.myDataChannel.send(JSON.stringify(sendObject));
 		}
+	}
+
+	public sendCustomJsonDataOverDataChannel(sendObject: DataChannelPacket) {
+		this.myDataChannel.send(JSON.stringify(sendObject));
 	}
 
 	public getLocalChatMessages() {
@@ -252,8 +259,8 @@ export class VortexWebRTC {
 
 			},
 				error => {
-					console.log('can\'t get media!');
-					console.log(error);
+					console.warn('can\'t get media!');
+					console.warn(error);
 					observer.next(null);
 				});
 		});
@@ -303,7 +310,7 @@ export class VortexWebRTC {
 
 	}
 
-	private onDataChannelNewMessage(event, observer) {
+	private onDataChannelNewMessage(event) {
 
 		if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
 			// binary data file incomming!
@@ -315,7 +322,7 @@ export class VortexWebRTC {
 			if (event.data instanceof ArrayBuffer) {
 				const returnValue = this.handleIncommingFileArrayBuffer(event.data);
 				if (returnValue) {
-					observer.next(returnValue);
+					this.incommingMessages.next(returnValue);
 				}
 			} else if (event.data instanceof Blob) {
 				// firefox recives as blob and we need to convert
@@ -323,7 +330,7 @@ export class VortexWebRTC {
 				fileReader.onload = (loadEvent) => {
 					const returnValue = this.handleIncommingFileArrayBuffer((<any>loadEvent.target).result);
 					if (returnValue) {
-						observer.next(returnValue);
+						this.incommingMessages.next(returnValue);
 					}
 				};
 				fileReader.readAsArrayBuffer(event.data);
@@ -332,28 +339,25 @@ export class VortexWebRTC {
 		} else {
 			// TODO TRY CATCH
 			const dataObject: DataChannelPacket = JSON.parse(event.data);
-			this.handleJsonDataChannelMessage(dataObject, event, observer);
+			this.handleJsonDataChannelMessage(dataObject, event);
 		}
 
 	}
 
 	private setupDataChannel() {
 
-		this.incommingMessageObservable = new Observable(observer => {
+		this.myRtcConnection.ondatachannel = (event) => {
 
-			this.myRtcConnection.ondatachannel = (event) => {
+			if (this.onlyDataChannel) {
+				this.isConnected = true;
+				this.webRtcConnectedChange.next(this.isConnected);
+			}
 
-				if (this.onlyDataChannel) {
-					this.isConnected = true;
-					this.webRtcConnectedChange.next(this.isConnected);
-				}
-
-				const receiveChannel = event.channel;
-				receiveChannel.onmessage = (messageEvent) => {
-					this.onDataChannelNewMessage(messageEvent, observer);
-				};
+			const receiveChannel = event.channel;
+			receiveChannel.onmessage = (messageEvent) => {
+				this.onDataChannelNewMessage(messageEvent);
 			};
-		});
+		};
 
 		// https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel
 		// Reliable(ordered) is now default
@@ -398,7 +402,7 @@ export class VortexWebRTC {
 
 	}
 
-	private handleJsonDataChannelMessage(jsonMessage: DataChannelPacket, event, observer) {
+	private handleJsonDataChannelMessage(jsonMessage: DataChannelPacket, event) {
 
 		if (jsonMessage.type === 'chat') {
 			this.addChatMessage(jsonMessage.data, false);
@@ -406,7 +410,7 @@ export class VortexWebRTC {
 				type: 'chat',
 				data: event.data
 			};
-			observer.next(nextObject);
+			this.incommingMessages.next(nextObject);
 		} else if (jsonMessage.type === 'file') {
 
 			if (this.incommingFile) {
@@ -421,7 +425,7 @@ export class VortexWebRTC {
 			};
 
 		} else {
-			console.log('unknown type: ' + jsonMessage.type);
+			// console.warn('unknown type: ' + jsonMessage.type);
 			this.unhandledJsonDataPackets.next(jsonMessage);
 		}
 
@@ -441,13 +445,11 @@ export class VortexWebRTC {
 	}
 
 	private sendMessageToServer(message) {
+
 		if (!this.wsConnection) {
 			console.error('WS connection not started');
 			return;
 		}
-
-		// console.log("Sending message to server: ")
-		// console.log(message)
 
 		// attach the other peer username to our messages
 		if (this.otherUserId) {

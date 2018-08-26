@@ -6,4 +6,4 @@ export interface Vec2D {
 export interface NewCanvasDrawingEvent {
 	prevPos: Vec2D;
 	newPos: Vec2D;
-};
+}

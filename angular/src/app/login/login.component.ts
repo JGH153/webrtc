@@ -22,6 +22,7 @@ export class LoginComponent implements OnInit {
 		//     this._websocketHandler.setLogin(Math.random().toString());
 		// }, 100);
 
+		this._websocketHandler.initialize();
 	}
 
 	onLogin() {

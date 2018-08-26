@@ -15,7 +15,6 @@ import { NavbarComponent } from './navbar/navbar.component';
 import { ImageManipulationComponent } from './image-manipulation/image-manipulation.component';
 import { DrawingComponent } from './drawing/drawing.component';
 import { CanvasComponent } from './drawing/canvas/canvas.component';
-import { DrawingWebrtcService } from './drawing/drawing-webrtc.service';
 
 @NgModule({
 	declarations: [
@@ -34,8 +33,7 @@ import { DrawingWebrtcService } from './drawing/drawing-webrtc.service';
 	],
 	providers: [
 		WebRtcHandlerService,
-		AuthenticatedGuard,
-		DrawingWebrtcService
+		AuthenticatedGuard
 	],
 	bootstrap: [
 		AppComponent
