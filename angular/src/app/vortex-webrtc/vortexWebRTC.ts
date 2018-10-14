@@ -287,7 +287,7 @@ export class VortexWebRTC {
 		if (!this.onlyDataChannel) {
 			// setup stream listening
 			stream.getTracks().forEach((currentTrack: MediaStreamTrack) => {
-				this.myRtcConnection.addTrack(currentTrack);
+				this.myRtcConnection.addTrack(currentTrack, new MediaStream());
 			});
 
 			this.myRtcConnection.ontrack = (event) => {
