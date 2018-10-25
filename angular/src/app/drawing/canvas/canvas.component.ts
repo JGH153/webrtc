@@ -85,6 +85,27 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 
 	private newDrawPoint(x, y, lastPoint, otherPersonDrawing: boolean = false) {
 		const radius = 5;
+		const callerDrawColor = 'red';
+		const targetDrawColor = 'blue';
+
+		if (this.drawingWebrtcService.isCaller) {
+			if (otherPersonDrawing) {
+				this.canvasRC.fillStyle = targetDrawColor;
+				this.canvasRC.strokeStyle = targetDrawColor;
+			} else {
+				this.canvasRC.fillStyle = callerDrawColor;
+				this.canvasRC.strokeStyle = callerDrawColor;
+			}
+		} else {
+			if (otherPersonDrawing) {
+				this.canvasRC.fillStyle = callerDrawColor;
+				this.canvasRC.strokeStyle = callerDrawColor;
+			} else {
+				this.canvasRC.fillStyle = targetDrawColor;
+				this.canvasRC.strokeStyle = targetDrawColor;
+			}
+		}
+
 
 		this.canvasRC.beginPath();
 		this.canvasRC.arc(x, y, radius, 0, 2 * Math.PI);

@@ -20,6 +20,8 @@ export class DrawingWebrtcService {
 	loggedIn = false;
 	vortexWebRTC: VortexWebRTC;
 
+	isCaller: boolean = false;
+
 	private connected = new BehaviorSubject<boolean>(false);
 	private incomminPoints = new Subject<NewCanvasDrawingEvent>();
 
@@ -94,6 +96,7 @@ export class DrawingWebrtcService {
 				console.log('calling other user ', data.matchId);
 				this.matchUserId = data.matchId;
 				this.vortexWebRTC.callUser(data.matchId);
+				this.isCaller = true;
 			} else {
 				console.log('no match, waiting');
 			}
