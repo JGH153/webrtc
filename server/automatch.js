@@ -1,3 +1,36 @@
+/* TODO switch to 
+
+const express = require('express');
+const SocketServer = require('ws').Server;
+const path = require('path');
+
+const PORT = process.env.PORT || 3000;
+const INDEX = path.join(__dirname, 'index.html');
+
+const server = express()
+  .use((req, res) => res.sendFile(INDEX) )
+  .listen(PORT, () => console.log(`Listening on ${ PORT }`));
+
+const wss = new SocketServer({ server });
+
+
+dependecies:
+
+    "bufferutil": "1.2.1",
+    "express": "4.13.4",
+    "utf-8-validate": "1.2.1",
+		"ws": "^3.2.0"
+
+*/
+
+
+
+
+
+
+
+
+
 //require our websocket library
 const WebSocketServer = require('ws').Server;
 
@@ -161,6 +194,12 @@ function onConnectionClose(connection) {
 	if (connection.otherUserId) {
 		console.log("Disconnecting from ", connection.otherUserId);
 		var conn = users[connection.otherUserId];
+
+		// TEMP fix
+		if (!conn){
+			return ;
+		}
+
 		conn.otherUserId = null;
 
 		if (conn != null) {

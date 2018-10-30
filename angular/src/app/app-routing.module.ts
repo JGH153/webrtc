@@ -12,7 +12,7 @@ import { DrawingComponent } from './drawing/drawing.component';
 const routes: Routes = [
 	{
 		path: '',
-		redirectTo: '/login',
+		redirectTo: '/drawing',
 		pathMatch: 'full'
 	},
 	{
