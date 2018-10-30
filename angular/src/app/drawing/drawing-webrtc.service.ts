@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { VortexWebRTC } from '../vortex-webrtc/vortexWebRTC';
 import { MatchDataPacket } from '../vortex-webrtc/models';
 import { tap } from 'rxjs/operators';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import { NewCanvasDrawingEvent } from '../interface/canvas.interfaces';
 
 const POINTS_TYPE = 'points';
@@ -21,6 +21,8 @@ export class DrawingWebrtcService {
 	vortexWebRTC: VortexWebRTC;
 
 	isCaller: boolean = false;
+
+	private subscriptions = new Subscription();
 
 	private connected = new BehaviorSubject<boolean>(false);
 	private incomminPoints = new Subject<NewCanvasDrawingEvent>();
@@ -43,22 +45,28 @@ export class DrawingWebrtcService {
 			this.vortexWebRTC.handleNewSocketMessage(newMessage);
 		};
 
+		this.setupWebRTC();
+
+	}
+
+	setupWebRTC() {
 		this.vortexWebRTC = new VortexWebRTC();
 		this.vortexWebRTC.addWsConnection(this.wsConnection);
 
 		// consider moving
-		this.vortexWebRTC.getUnhandledJsonDataPackets().subscribe((next) => {
+		this.subscriptions.add(this.vortexWebRTC.getUnhandledJsonDataPackets().subscribe((next) => {
 			if (next.type === POINTS_TYPE) {
 				this.onIncommingPoints(next.data as NewCanvasDrawingEvent);
 			} else {
 				console.warn('unknown type');
 			}
-		});
+		}));
 
-		this.vortexWebRTC.getWebRtcConnectedChange().subscribe((isConnected) => {
+		this.subscriptions.add(this.vortexWebRTC.getWebRtcConnectedChange().subscribe((isConnected) => {
 			console.log('isConnected: ', isConnected);
+
 			this.connected.next(isConnected);
-		});
+		}));
 	}
 
 	isConnected() {
@@ -92,7 +100,7 @@ export class DrawingWebrtcService {
 				console.log('newMessages!', newMessages);
 			});
 
-			if (data.matchId) {
+			if (data.matchId >= 0 && data.matchId !== null) {
 				console.log('calling other user ', data.matchId);
 				this.matchUserId = data.matchId;
 				this.vortexWebRTC.callUser(data.matchId);

@@ -452,7 +452,7 @@ export class VortexWebRTC {
 		}
 
 		// attach the other peer username to our messages
-		if (this.otherUserId) {
+		if (this.otherUserId !== null) {
 			message.name = this.otherUserId;
 		}
 
