@@ -67,12 +67,14 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 		if (!this.isDrawing) {
 			return;
 		}
+		event.preventDefault();
 		const x = event.pageX - this.canvas.nativeElement.offsetLeft;
 		const y = event.pageY - this.canvas.nativeElement.offsetTop;
 		this.newDrawPoint(x, y, this.lastPoint);
 	}
 
 	public onTouchmove(event: TouchEvent ) {
+		event.preventDefault();
 		const touch = event.touches[0];
 		const x = touch.pageX - this.canvas.nativeElement.offsetLeft;
 		const y = touch.pageY - this.canvas.nativeElement.offsetTop;

@@ -32,7 +32,7 @@ export class DrawingWebrtcService {
 	// TODO change to auto connect/login
 	connectToSingalingServer(): any {
 
-		this.wsConnection = new WebSocket('ws://localhost:9065/');
+		this.wsConnection = new WebSocket('ws://localhost:3000/');
 		this.wsConnection.onopen = () => {
 			// connected
 		};
