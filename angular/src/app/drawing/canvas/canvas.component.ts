@@ -51,7 +51,7 @@ export class CanvasComponent implements OnInit, AfterViewInit {
 		event.preventDefault();
 	}
 
-	public onCanvasMouseRelease() {
+	public onCanvasRelease() {
 		this.setIsDrawing(false);
 	}
 

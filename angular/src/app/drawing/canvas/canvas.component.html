@@ -1,10 +1,12 @@
 <canvas 
 	(mousemove)="onMouseMove($event)"
 	(mousedown)="onCanvasMouseDown($event)"
-	(mouseup)="onCanvasMouseRelease()"
+	(mouseup)="onCanvasRelease()"
 	(mouseenter)="onCanvasMouseEnter()"
 	(mouseleave)="onCanvasMouseLeave()"
+
 	(touchmove)="onTouchmove($event)"
+	(touchend)="onCanvasRelease()"
 	#canvas
 	width="950"
 	height="850"
