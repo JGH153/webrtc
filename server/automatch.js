@@ -1,4 +1,3 @@
-/* TODO switch to 
 
 const express = require('express');
 const SocketServer = require('ws').Server;
@@ -12,30 +11,6 @@ const server = express()
   .listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
 const wss = new SocketServer({ server });
-
-
-dependecies:
-
-    "bufferutil": "1.2.1",
-    "express": "4.13.4",
-    "utf-8-validate": "1.2.1",
-		"ws": "^3.2.0"
-
-*/
-
-
-
-
-
-
-
-
-
-//require our websocket library
-const WebSocketServer = require('ws').Server;
-
-//creating a websocket server at port 9065
-const wss = new WebSocketServer({ port: 9065 });
 
 //all connected to the server users
 var users = {};
